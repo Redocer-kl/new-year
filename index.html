@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>С Новым Годом!</title>
+    <style>
+        /* --- Основные настройки --- */
+        body {
+            margin: 0;
+            padding: 0;
+            /* Градиент ночного неба */
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            height: 100vh; /* На всю высоту экрана */
+            height: 100dvh; /* Динамическая высота для мобильных браузеров */
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column; /* Вертикальное расположение элементов */
+            align-items: center;
+            touch-action: manipulation;
+            position: relative;
+        }
+
+        /* --- Заголовок --- */
+        .header-text {
+            color: #fff; text-align: center; font-size: 2.5rem; font-weight: bold;
+            margin-top: 20px;
+            text-shadow: 0 0 10px #ffd700, 0 0 20px #ff8c00;
+            z-index: 20; /* Поверх всего, кроме модалки */
+            animation: titleGlow 3s infinite alternate;
+            position: relative;
+        }
+
+        /* --- Фоновые пульсирующие звезды --- */
+        .stars-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 80%;
+            z-index: 0; pointer-events: none; overflow: hidden;
+        }
+        .bg-star {
+            position: absolute; background: white; border-radius: 50%;
+            animation: twinkle infinite alternate;
+        }
+
+        /* --- Canvas для снега --- */
+        .snow-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; /* Чтобы сквозь снег можно было кликать */
+        }
+        #snowBack { z-index: 2; } /* Снег ЗА елкой */
+        #snowFront { z-index: 15; } /* Снег ПЕРЕД елкой */
+
+        /* --- Контейнер елки --- */
+        .main-container {
+            flex-grow: 1; width: 100%;
+            display: flex; justify-content: center; align-items: flex-end;
+            padding-bottom: 50px; /* Отступ снизу, чтобы елка стояла "в сугробе" */
+            box-sizing: border-box;
+            z-index: 10; /* Елка посередине */
+            position: relative;
+        }
+
+        /* Обертка для самой елки */
+        .tree-wrapper {
+            position: relative;
+            width: 60vmin; height: 80vmin;
+            max-width: 400px; max-height: 600px;
+        }
+
+        /* --- Сугроб внизу --- */
+        .snowbank {
+            position: fixed; bottom: -50px; left: 0; width: 100%; height: 120px;
+            background: linear-gradient(to top, #e6e6e6, #fff 60%);
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0; /* Закругленная форма */
+            box-shadow: 0 -10px 20px rgba(255,255,255,0.3);
+            z-index: 12; /* Перед елкой, но за передним снегом */
+        }
+
+        /* --- Слои елки (CSS Треугольники) --- */
+        .tree-layer {
+            position: absolute; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-style: solid;
+            border-color: transparent transparent #0f5e30 transparent;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+        }
+        .layer-1 { bottom: 15%; border-width: 0 30vmin 35vmin 30vmin; z-index: 3; }
+        .layer-2 { bottom: 35%; border-width: 0 25vmin 30vmin 25vmin; z-index: 4; }
+        .layer-3 { bottom: 55%; border-width: 0 20vmin 25vmin 20vmin; z-index: 5; }
+
+        /* Ствол */
+        .trunk {
+            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 10vmin; height: 20vmin; background: #4d2e18;
+            border-radius: 5px; z-index: 1;
+        }
+
+        /* Звезда */
+        .star {
+            position: absolute; top: 2%; left: 50%; transform: translateX(-50%);
+            font-size: 12vmin; color: gold; text-shadow: 0 0 15px orange;
+            z-index: 10; animation: starPulse 2s infinite ease-in-out;
+        }
+
+        /* --- Шарики --- */
+        .ball {
+            position: absolute; width: 6vmin; height: 6vmin;
+            border-radius: 50%; box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+            cursor: pointer; z-index: 7; transition: transform 0.2s;
+            padding: 5px; background-clip: content-box;
+        }
+        .ball:active, .ball:hover { transform: scale(1.3); }
+        /* Позиции шариков */
+        .b1 { bottom: 22%; left: 20%; background: radial-gradient(circle at 30% 30%, #ff4d4d, #a70000); }
+        .b2 { bottom: 28%; right: 22%; background: radial-gradient(circle at 30% 30%, #ffd700, #ff8c00); }
+        .b3 { bottom: 45%; left: 30%; background: radial-gradient(circle at 30% 30%, #4da6ff, #00008b); }
+        .b4 { bottom: 50%; right: 32%; background: radial-gradient(circle at 30% 30%, #ff7aa2, #c70039); }
+        .b5 { bottom: 65%; left: 40%; background: radial-gradient(circle at 30% 30%, #ffd700, #ff8c00); }
+
+        /* --- Гирлянда --- */
+        .lights-container {
+            position: absolute; top:0; left:0; width: 100%; height: 100%;
+            z-index: 6; pointer-events: none;
+        }
+        .light {
+            position: absolute; width: 2.5vmin; height: 2.5vmin; border-radius: 50%;
+            background: #fff; animation: flash 1.5s infinite alternate;
+        }
+        /* Позиции огоньков */
+        .l1 { bottom: 25%; left: 40%; animation-delay: 0s; background: #ff0; box-shadow: 0 0 10px #ff0; }
+        .l2 { bottom: 38%; left: 55%; animation-delay: 0.5s; background: #f00; box-shadow: 0 0 10px #f00; }
+        .l3 { bottom: 61%; left: 35%; animation-delay: 1s; background: #00f; box-shadow: 0 0 10px #00f; }
+        .l4 { bottom: 58%; left: 50%; animation-delay: 0.2s; background: #0f0; box-shadow: 0 0 10px #0f0; }
+        .l5 { bottom: 68%; left: 58%; animation-delay: 0.7s; background: #ff00ff; box-shadow: 0 0 10px #ff00ff; }
+
+        /* --- Мишура --- */
+        .tinsel-svg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5; pointer-events: none;
+        }
+        .tinsel-path {
+            fill: none; stroke: rgba(230, 230, 230, 0.7);
+            stroke-width: 1.5vmin; stroke-dasharray: 2vmin, 2vmin;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+        }
+
+        /* --- Модальное окно --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: all 0.3s ease; z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content {
+            background: #fff; padding: 25px; border-radius: 20px;
+            text-align: center; width: 85%; max-width: 350px;
+            transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .modal-img {
+            width: 100%; height: 200px; object-fit: cover;
+            border-radius: 15px; margin-bottom: 20px;
+        }
+        .modal-text { font-size: 1.2rem; color: #333; margin-bottom: 25px; line-height: 1.5; }
+        .close-btn {
+            background: linear-gradient(45deg, #ff4d4d, #c70039); color: white; border: none;
+            padding: 12px 30px; border-radius: 25px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(199, 0, 57, 0.4);
+        }
+
+        /* --- Анимации --- */
+        @keyframes titleGlow {
+            from { text-shadow: 0 0 10px #ffd700, 0 0 20px #ff8c00; }
+            to { text-shadow: 0 0 20px #ffd700, 0 0 30px #ff8c00, 0 0 40px #ff0000; }
+        }
+        @keyframes flash {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.4); }
+        }
+        @keyframes starPulse {
+            0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.8; }
+            50% { transform: translateX(-50%) scale(1.2); opacity: 1; }
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: scale(0.8); box-shadow: 0 0 2px #fff; }
+            100% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 5px #fff, 0 0 10px #fff; }
+        }
+        
+        @media (max-aspect-ratio: 1/2) {
+             .tree-wrapper { width: 80vmin; height: 100vmin; }
+             .layer-1 { border-width: 0 40vmin 45vmin 40vmin; }
+             .layer-2 { border-width: 0 32vmin 38vmin 32vmin; }
+             .layer-3 { border-width: 0 25vmin 30vmin 25vmin; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stars-container" id="starsContainer"></div>
+
+    <canvas id="snowBack" class="snow-canvas"></canvas>
+
+    <h1 class="header-text">С Новым Годом!</h1>
+
+    <div class="main-container">
+        <div class="tree-wrapper">
+            <div class="star">★</div>
+            <div class="lights-container">
+                <div class="light l1"></div><div class="light l2"></div><div class="light l3"></div><div class="light l4"></div><div class="light l5"></div>
+            </div>
+            <div class="ball b1" data-id="1"></div><div class="ball b2" data-id="2"></div><div class="ball b3" data-id="3"></div><div class="ball b4" data-id="4"></div><div class="ball b5" data-id="5"></div>
+
+            <div class="tree-layer layer-3"></div><div class="tree-layer layer-2"></div><div class="tree-layer layer-1"></div>
+            <div class="trunk"></div>
+        </div>
+    </div>
+
+    <div class="snowbank"></div>
+
+    <canvas id="snowFront" class="snow-canvas"></canvas>
+
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <img src="" alt="Подарок" class="modal-img" id="modalImg">
+            <p class="modal-text" id="modalText"></p>
+            <button class="close-btn" onclick="closeModal()">Ура! 🎉</button>
+        </div>
+    </div>
+
+    <script>
+        // --- ДАННЫЕ ДЛЯ ПОЗДРАВЛЕНИЙ (Отредактируй этот блок!) ---
+        const greetings = {
+            1: { text: "Пусть в Новом году счастье будет таким же огромным, как эта елка! 🎄", img: "1.jpg" },
+            2: { text: "Желаю вам столько же радостных моментов, сколько снежинок падает вокруг! ❄️", img: "2.jpg" },
+            3: { text: "Пусть сбудется самая заветная мечта! Верь в чудеса! ✨", img: "3.jpg" },
+            4: { text: "Здоровья, тепла и мешок подарков под подушкой! 🎁", img: "4.jpg" },
+            5: { text: "С Новым Годом! Спасибо, что вы есть в моей жизни! ❤️", img: "5.jpg" }
+        };
+
+        // --- ГЕНЕРАЦИЯ ФОНОВЫХ ЗВЕЗД ---
+        const starsContainer = document.getElementById('starsContainer');
+        for (let i = 0; i < 50; i++) {
+            const star = document.createElement('div');
+            star.classList.add('bg-star');
+            // Рандомная позиция
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.left = `${Math.random() * 100}%`;
+            // Рандомный размер от 1px до 3px
+            const size = Math.random() * 2 + 1;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            // Рандомная задержка и длительность анимации для "мерцания"
+            star.style.animationDelay = `${Math.random() * 2}s`;
+            star.style.animationDuration = `${Math.random() * 3 + 2}s`;
+            starsContainer.appendChild(star);
+        }
+
+        // --- ЛОГИКА МОДАЛЬНОГО ОКНА ---
+        const modal = document.getElementById('modal');
+        const modalImg = document.getElementById('modalImg');
+        const modalText = document.getElementById('modalText');
+        document.querySelectorAll('.ball').forEach(ball => {
+            ball.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const id = this.getAttribute('data-id');
+                const content = greetings[id];
+                if (content) {
+                    modalImg.src = content.img;
+                    modalText.textContent = content.text;
+                    modal.classList.add('active');
+                }
+            });
+        });
+        function closeModal() { modal.classList.remove('active'); }
+        modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+
+        // --- ДВОЙНОЙ CANVAS СНЕГ ---
+        const canvasBack = document.getElementById('snowBack');
+        const ctxBack = canvasBack.getContext('2d');
+        const canvasFront = document.getElementById('snowFront');
+        const ctxFront = canvasFront.getContext('2d');
+
+        let width, height;
+        let snowflakesBack = [];
+        let snowflakesFront = [];
+
+        function resizeCanvases() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvasBack.width = width; canvasBack.height = height;
+            canvasFront.width = width; canvasFront.height = height;
+        }
+        window.addEventListener('resize', resizeCanvases);
+        resizeCanvases();
+
+        class Snowflake {
+            constructor(isFront) {
+                this.isFront = isFront;
+                this.reset();
+                this.y = Math.random() * height; // При старте заполняем весь экран
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = -20;
+                // Передние снежинки крупнее и быстрее для эффекта параллакса
+                if (this.isFront) {
+                    this.radius = Math.random() * 4 + 2; // Крупнее
+                    this.speed = Math.random() * 2.5 + 1.5; // Быстрее
+                    this.opacity = Math.random() * 0.4 + 0.6; // Ярче
+                } else {
+                    this.radius = Math.random() * 2 + 1; // Мельче
+                    this.speed = Math.random() * 1.5 + 0.5; // Медленнее
+                    this.opacity = Math.random() * 0.3 + 0.2; // Тусклее
+                }
+                this.swing = Math.random() * 0.5 - 0.25;
+            }
+
+            update() {
+                this.y += this.speed;
+                this.x += this.swing;
+                if (this.y > height + 10) this.reset();
+            }
+
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+
+        function initSnow() {
+            const count = width < 600 ? 80 : 150;
+            // Создаем два массива снежинок
+            for (let i = 0; i < count; i++) snowflakesBack.push(new Snowflake(false));
+            for (let i = 0; i < count / 2; i++) snowflakesFront.push(new Snowflake(true)); // Передних меньше
+        }
+
+        function animateSnow() {
+            // Очищаем и рисуем задний план
+            ctxBack.clearRect(0, 0, width, height);
+            snowflakesBack.forEach(flake => { flake.update(); flake.draw(ctxBack); });
+
+            // Очищаем и рисуем передний план
+            ctxFront.clearRect(0, 0, width, height);
+            snowflakesFront.forEach(flake => { flake.update(); flake.draw(ctxFront); });
+
+            requestAnimationFrame(animateSnow);
+        }
+
+        initSnow();
+        animateSnow();
+    </script>
+</body>
+</html>
