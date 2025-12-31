@@ -240,14 +240,14 @@
 
         // --- ГЕНЕРАЦИЯ ФОНОВЫХ ЗВЕЗД ---
         const starsContainer = document.getElementById('starsContainer');
-        for (let i = 0; i < 15; i++) {
+        for (let i = 0; i < 7; i++) {
             const star = document.createElement('div');
             star.classList.add('bg-star');
             // Рандомная позиция
             star.style.top = `${Math.random() * 100}%`;
             star.style.left = `${Math.random() * 100}%`;
             // Рандомный размер от 1px до 3px
-            const size = Math.random() * 2 + 1;
+            const size = Math.random() * 5 + 1;
             star.style.width = `${size}px`;
             star.style.height = `${size}px`;
             // Рандомная задержка и длительность анимации для "мерцания"
@@ -306,11 +306,11 @@
                 this.y = -20;
                 // Передние снежинки крупнее и быстрее для эффекта параллакса
                 if (this.isFront) {
-                    this.radius = Math.random() * 4 + 2; // Крупнее
+                    this.radius = Math.random() * 6 + 2; // Крупнее
                     this.speed = Math.random() * 2.5 + 1.5; // Быстрее
                     this.opacity = Math.random() * 0.4 + 0.6; // Ярче
                 } else {
-                    this.radius = Math.random() * 2 + 1; // Мельче
+                    this.radius = Math.random() * 3 + 1; // Мельче
                     this.speed = Math.random() * 1.5 + 0.5; // Медленнее
                     this.opacity = Math.random() * 0.3 + 0.2; // Тусклее
                 }
@@ -333,7 +333,7 @@
         }
 
         function initSnow() {
-            const count = width < 600 ? 15 : 50;
+            const count = width < 600 ? 5 : 50;
             // Создаем два массива снежинок
             for (let i = 0; i < count; i++) snowflakesBack.push(new Snowflake(false));
             for (let i = 0; i < count / 2; i++) snowflakesFront.push(new Snowflake(true)); // Передних меньше
